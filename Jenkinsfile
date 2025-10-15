@@ -1,51 +1,46 @@
 pipeline {
     agent any
 
-    environment {
-        // Adjust paths if needed
-        MAVEN_HOME = tool name: 'Maven', type: 'maven'
-        TOMCAT_HOME = "/path/to/apache-tomcat" // e.g., C:/apache-tomcat-9.0.80
+    tools {
+        // Make sure this name matches what you configured in Jenkins Global Tool Configuration
+        maven 'Maven'  
+        jdk 'JDK'      
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/AnishPackya/Vehicle_Management.git'
+                git url: 'https://github.com/AnishPackya/Vehicle_Management.git', branch: 'main'
             }
         }
 
         stage('Build') {
             steps {
-                script {
-                    sh "${MAVEN_HOME}/bin/mvn clean package"
-                }
+                bat "${tool 'Maven'}\\bin\\mvn clean package"
             }
         }
 
         stage('Test') {
             steps {
-                script {
-                    sh "${MAVEN_HOME}/bin/mvn test"
-                }
+                bat "${tool 'Maven'}\\bin\\mvn test"
             }
         }
 
         stage('Deploy to Tomcat') {
             steps {
-                script {
-                    // Copy WAR file to Tomcat webapps directory
-                    sh "cp target/vehicle-service-management-1.0-SNAPSHOT.war ${TOMCAT_HOME}/webapps/"
-                }
+                echo 'Deploying WAR to Tomcat...'
+                // Example: copy WAR to Tomcat webapps folder
+                bat 'copy target\\VehicleManagement-1.0-SNAPSHOT.war "C:\\apache-tomcat-9.0.73\\webapps\\"'
             }
         }
     }
 
     post {
         success {
-            echo "Build, Test, and Deployment completed successfully!"
+            echo 'Pipeline completed successfully!'
         }
         failure {
-            echo "Something went wrong. Check the Jenkins logs."
+            echo 'Pipeline failed! Check logs.'
         }
     }
 }

@@ -1,32 +1,45 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'JDK17'
-        maven 'MAVEN3'
-    }
-
     stages {
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                echo 'Running Maven Build...'
-                bat 'mvn clean package -DskipTests'
+                git branch: 'main', url: 'https://github.com/AnishPackya/Vehicle_Management.git'
             }
         }
-        stage('Archive') {
+
+        stage('Build & Test') {
             steps {
-                echo 'Archiving Artifacts...'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+                script {
+                    // Windows: use bat, Linux/macOS: use sh
+                    if (isUnix()) {
+                        sh 'mvn clean test package'
+                    } else {
+                        bat 'mvn clean test package'
+                    }
+                }
+            }
+        }
+
+        stage('Archive Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'target/vehicle-service-management-1.0-SNAPSHOT.jar', fingerprint: true
+            }
+        }
+
+        stage('Publish Test Results') {
+            steps {
+                junit 'target/surefire-reports/*.xml'
             }
         }
     }
 
     post {
         success {
-            echo '✅ Build Success!'
+            echo 'Build and Test Successful!'
         }
         failure {
-            echo '❌ Build Failed!'
+            echo 'Build failed. Check console output.'
         }
     }
 }

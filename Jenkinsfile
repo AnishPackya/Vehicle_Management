@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        // Adjust paths if needed
+        MAVEN_HOME = tool name: 'Maven', type: 'maven'
+        TOMCAT_HOME = "/path/to/apache-tomcat" // e.g., C:/apache-tomcat-9.0.80
+    }
+
     stages {
         stage('Checkout') {
             steps {
@@ -8,38 +14,38 @@ pipeline {
             }
         }
 
-        stage('Build & Test') {
+        stage('Build') {
             steps {
                 script {
-                    // Windows: use bat, Linux/macOS: use sh
-                    if (isUnix()) {
-                        sh 'mvn clean test package'
-                    } else {
-                        bat 'mvn clean test package'
-                    }
+                    sh "${MAVEN_HOME}/bin/mvn clean package"
                 }
             }
         }
 
-        stage('Archive Artifact') {
+        stage('Test') {
             steps {
-                archiveArtifacts artifacts: 'target/vehicle-service-management-1.0-SNAPSHOT.jar', fingerprint: true
+                script {
+                    sh "${MAVEN_HOME}/bin/mvn test"
+                }
             }
         }
 
-        stage('Publish Test Results') {
+        stage('Deploy to Tomcat') {
             steps {
-                junit 'target/surefire-reports/*.xml'
+                script {
+                    // Copy WAR file to Tomcat webapps directory
+                    sh "cp target/vehicle-service-management-1.0-SNAPSHOT.war ${TOMCAT_HOME}/webapps/"
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Build and Test Successful!'
+            echo "Build, Test, and Deployment completed successfully!"
         }
         failure {
-            echo 'Build failed. Check console output.'
+            echo "Something went wrong. Check the Jenkins logs."
         }
     }
 }
